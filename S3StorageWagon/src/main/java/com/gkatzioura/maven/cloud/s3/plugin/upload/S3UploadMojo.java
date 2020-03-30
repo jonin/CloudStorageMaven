@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.gkatzioura.maven.cloud.s3.plugin.upload;
 
 import java.io.File;
@@ -42,7 +41,7 @@ import com.gkatzioura.maven.cloud.s3.utils.S3Connect;
 @Mojo(name = "s3-upload")
 public class S3UploadMojo extends AbstractMojo {
 
-    @Parameter( property = "s3-upload.bucket")
+    @Parameter(property = "s3-upload.bucket")
     private String bucket;
 
     @Parameter(property = "s3-upload.path")
@@ -58,8 +57,10 @@ public class S3UploadMojo extends AbstractMojo {
     }
 
     /**
-     * If the path is a file then a file shall be uploaded. If the file specified is a directory
-     * then the directory shall be uploaded using prefix and the rest files shall be uploaded recursively
+     * If the path is a file then a file shall be uploaded. If the file
+     * specified is a directory then the directory shall be uploaded using
+     * prefix and the rest files shall be uploaded recursively
+     *
      * @param bucket
      * @param path
      * @param key
@@ -73,7 +74,9 @@ public class S3UploadMojo extends AbstractMojo {
     }
 
     /**
-     * At least the bucket should be null or else everything else shall be fetched
+     * At least the bucket should be null or else everything else shall be
+     * fetched
+     *
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
@@ -90,15 +93,15 @@ public class S3UploadMojo extends AbstractMojo {
             amazonS3 = S3Connect.connect(null, region, EndpointProperty.empty(), new PathStyleEnabledProperty(String.valueOf(S3ClientOptions.DEFAULT_PATH_STYLE_ACCESS)));
         } catch (AuthenticationException e) {
             throw new MojoExecutionException(
-                    String.format("Unable to authenticate to S3 with the available credentials. Make sure to either define the environment variables or System properties defined in https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html.%n" +
-                            "Detail: %s", e.getMessage()),
+                    String.format("Unable to authenticate to S3 with the available credentials. Make sure to either define the environment variables or System properties defined in https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html.%n"
+                            + "Detail: %s", e.getMessage()),
                     e);
         }
 
-        if(isDirectory()){
+        if (isDirectory()) {
             List<String> filesToUpload = findFilesToUpload(path);
 
-            for(String fileToUpload: filesToUpload) {
+            for (String fileToUpload : filesToUpload) {
                 keyUpload(amazonS3, generateKeyName(fileToUpload), new File(fileToUpload));
             }
         } else {
@@ -114,7 +117,7 @@ public class S3UploadMojo extends AbstractMojo {
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, keyName, inputStream, objectMetadata);
             amazonS3.putObject(putObjectRequest);
         } catch (IOException e) {
-            throw new MojoExecutionException("Failed to upload mojo",e);
+            throw new MojoExecutionException("Failed to upload mojo", e);
         }
     }
 
@@ -123,11 +126,11 @@ public class S3UploadMojo extends AbstractMojo {
 
         File file = new File(filePath);
 
-        if(file.isDirectory()) {
+        if (file.isDirectory()) {
             File[] files = file.listFiles();
 
-            for(File lFile: files) {
-                if(lFile.isDirectory()) {
+            for (File lFile : files) {
+                if (lFile.isDirectory()) {
                     List<String> filesFound = findFilesToUpload(lFile.getAbsolutePath());
                     totalFiles.addAll(filesFound);
                 } else {
@@ -151,22 +154,22 @@ public class S3UploadMojo extends AbstractMojo {
 
         String absolutePath = new File(path).getAbsolutePath();
 
-        if(key!=null) {
+        if (key != null) {
             keyNameBuilder.append(key);
-            if(!fullFilePath.startsWith("/")) {
+            if (fullFilePath.charAt(0) != File.separatorChar) {
                 keyNameBuilder.append("/");
             }
-            keyNameBuilder.append(fullFilePath.replace(absolutePath,""));
-        } else {
-            final String clearFilePath = fullFilePath.replace(absolutePath,"");
-            final String filePathToAppend = clearFilePath.startsWith("/")? clearFilePath.replaceFirst("/",""):clearFilePath;
-            keyNameBuilder.append(filePathToAppend);
+        }
+        final String clearFilePath = fullFilePath.replace(absolutePath, "");
+        keyNameBuilder.append(clearFilePath.replace(File.separatorChar, '/'));
+        if (keyNameBuilder.charAt(0) == '/') {
+            keyNameBuilder.deleteCharAt(0);
         }
         return keyNameBuilder.toString();
     }
 
     private String keyIfNull() {
-        if(key==null) {
+        if (key == null) {
             return new File(path).getName();
         } else {
             return key;
