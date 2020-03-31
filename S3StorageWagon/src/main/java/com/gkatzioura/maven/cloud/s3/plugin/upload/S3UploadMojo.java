@@ -32,6 +32,7 @@ import org.apache.maven.wagon.authentication.AuthenticationException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.S3ClientOptions;
+import com.amazonaws.services.s3.internal.Mimetypes;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import com.gkatzioura.maven.cloud.s3.EndpointProperty;
@@ -113,6 +114,7 @@ public class S3UploadMojo extends AbstractMojo {
         try (InputStream inputStream = new FileInputStream(file)) {
             ObjectMetadata objectMetadata = new ObjectMetadata();
             objectMetadata.setContentLength(file.length());
+            objectMetadata.setContentType(Mimetypes.getInstance().getMimetype(file));
 
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, keyName, inputStream, objectMetadata);
             amazonS3.putObject(putObjectRequest);
